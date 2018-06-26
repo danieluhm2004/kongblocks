@@ -4,7 +4,7 @@ description: Ownblocks 의 취약점을 해결한 새로운 플러그인입니�
 author: Mcraft
 authors: [i_seven]
 website: developers.mcraft.kr
-main: kr.mcraft.kongblocks.KongBlocks
+main: main.java.kr.mcraft.kongblocks.KongBlocks
 prefix: KongBlocks
 
 commands:

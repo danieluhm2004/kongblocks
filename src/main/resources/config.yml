@@ -1,0 +1,26 @@
+settings:
+  printConfig: true
+  # 활성화시 플러그인 설정 내용을 보여줍니다.
+  reviewEnable: true 
+  # 유저들이 더 좋은 플러그인을 사용하기 위해 리뷰, 제안을 할 수 있는 명령어입니다.
+  noticeEnable: true 
+  # 공블럭을 사용하고 있다는 메세지를 출력합니다. 수고한 개발자를 위해 켜주셨으면 합니다.
+  noticeTime: 600 
+  # 공블럭을 사용하고 있다는 메세지를 출력하는 시간입니다. (초 단위)
+  statusEnable: true 
+  # 켜진 상태인줄 알고 있다가 테러 당할 수 있으므로. 가끔식 알려주는 기능입니다.
+  statusTime: 600 
+  # 보호가 켜져있는 상태인지 알려주는 시간입니다. (초 단위)
+  database: ''
+  # 데이터 베이스 위치입니다.
+
+messages: 
+  prefix: ''
+  # 메세지 앞에 붙는 칭호입니다. 서버에 맞게 수정하여 사용하세요!
+  enableMessage: ''
+  disableMessage: ''
+  permissionMessage: ''
+  noticeMessage: ''
+  reviewMessage: ''
+  statusEnableMessage: ''
+  statusDisableMessage: ''
