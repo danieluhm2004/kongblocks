@@ -1,5 +1,9 @@
 package main.java.kr.mcraft.kongblocks.events;
 
+import java.util.UUID;
+
+import org.bukkit.Bukkit;
+import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.EventPriority;
 import org.bukkit.event.Listener;
@@ -13,20 +17,23 @@ public class BlockBreak implements Listener {
 	@EventHandler(priority=EventPriority.LOWEST)
 	public void onEvent(BlockBreakEvent event) {
 		BlockObject block = new BlockObject(event.getBlock());
-		if(KongBlocks.map.containsKey(block)) {
-			if(KongBlocks.enabled.contains(KongBlocks.map.get(block))) {
+		if(KongBlocks.databaseMap.containsKey(block)) {
+			Player player = event.getPlayer();
+			String target = KongBlocks.databaseMap.get(block);
+			if(KongBlocks.enabled.contains(target)) {
 				if(event.getPlayer().isOp()) {
-					KongBlocks.removeBlock(block, event.getPlayer());
+					KongBlocks.removeBlock(block, player);
+					return;
+				}
+				
+				if(player.getUniqueId().toString().equalsIgnoreCase(target)) {
+					KongBlocks.removeBlock(block, player);
 				} else {
-					if(KongBlocks.map.get(block).equals(event.getPlayer().getUniqueId().toString())) {
-						KongBlocks.removeBlock(block, event.getPlayer());
-					} else {
-						MessageSender.playerMessage(event.getPlayer(), KongBlocks.getPrefix() + KongBlocks.permissionMessage);
-						event.setCancelled(true);
-					}
+					MessageSender.playerMessage(event.getPlayer(), KongBlocks.getPrefix() + KongBlocks.hasOwnerMessage.replace("<player>", Bukkit.getOfflinePlayer(UUID.fromString(target)).getName()));
+					event.setCancelled(true);
 				}
 			} else {
-				KongBlocks.removeBlock(block, event.getPlayer());
+				KongBlocks.removeBlock(block, player);
 			}
 		}
 	}

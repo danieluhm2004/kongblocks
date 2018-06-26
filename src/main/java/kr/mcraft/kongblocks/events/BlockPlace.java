@@ -13,10 +13,10 @@ public class BlockPlace implements Listener {
 	@EventHandler(priority=EventPriority.LOWEST)
 	public void onEvent(BlockPlaceEvent event) {
 		BlockObject block = new BlockObject(event.getBlock());
-		if(!KongBlocks.map.containsKey(block)) {
+		if(!KongBlocks.databaseMap.containsKey(block)) {
 			KongBlocks.addBlock(block, event.getPlayer());
 		} else {
-			MessageSender.playerMessage(event.getPlayer(), KongBlocks.getPrefix() + KongBlocks.permissionMessage);
+			MessageSender.playerMessage(event.getPlayer(), KongBlocks.getPrefix() + KongBlocks.hasOwnerMessage);
 			event.setCancelled(true);
 		}
 	}

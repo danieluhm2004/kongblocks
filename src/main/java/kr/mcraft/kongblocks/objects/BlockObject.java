@@ -1,8 +1,15 @@
 package main.java.kr.mcraft.kongblocks.objects;
 
+import java.io.Serializable;
+
 import org.bukkit.block.Block;
 
-public class BlockObject {
+public class BlockObject implements Serializable {
+	/**
+	 * 
+	 */
+	private static final long serialVersionUID = -6753463614011275277L;
+	
 	private String world;
 	private int X, Y, Z;
 
