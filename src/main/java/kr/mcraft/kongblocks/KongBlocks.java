@@ -1,10 +1,16 @@
 package main.java.kr.mcraft.kongblocks;
 
+import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
+import java.io.InputStreamReader;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
+import java.io.OutputStream;
+import java.io.OutputStreamWriter;
+import java.net.HttpURLConnection;
+import java.net.URL;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Random;
@@ -15,6 +21,10 @@ import org.bukkit.entity.Player;
 import org.bukkit.event.Listener;
 import org.bukkit.plugin.Plugin;
 import org.bukkit.plugin.java.JavaPlugin;
+
+import com.google.gson.JsonElement;
+import com.google.gson.JsonObject;
+import com.google.gson.JsonParser;
 
 import main.java.kr.mcraft.kongblocks.commands.ProtectCommand;
 import main.java.kr.mcraft.kongblocks.events.BlockBreak;
@@ -30,6 +40,7 @@ import main.java.kr.mcraft.kongblocks.utils.MessageSender;
 import static main.java.kr.mcraft.kongblocks.utils.MessageSender.*;
 
 public class KongBlocks extends JavaPlugin {
+	public static final String uuid = "dfda1f7a04034e84bdafea95c219a5f6";
 	private static Plugin plugin;
 
 	// Settings
@@ -75,6 +86,16 @@ public class KongBlocks extends JavaPlugin {
 	public static ArrayList<String> enabled = new ArrayList<String>();
 	public static ArrayList<Player> information = new ArrayList<>();
 
+	// Update
+	public static boolean hasUpdate = false;
+	public static String updateVersion = "1.0";
+	public static String updateUrl = new String();
+	public static ArrayList<String> updateMessages = new ArrayList<>();
+
+	// Review (Report)
+	public static boolean hasReport = true;
+	public static String reportUrl = new String();
+
 	@Override
 	public void onEnable() {
 		try {
@@ -84,7 +105,7 @@ public class KongBlocks extends JavaPlugin {
 				setup();
 			}
 			setConfig();
-			if(!version.equalsIgnoreCase(getDescription().getVersion())) {
+			if (!version.equalsIgnoreCase(getDescription().getVersion())) {
 				consoleMessage(getPrefix() + "&e설정 파일 &e버전&f이 다릅니다. &c초기화&f합니다.");
 				getConfig().set("", null);
 				setup();
@@ -94,13 +115,13 @@ public class KongBlocks extends JavaPlugin {
 			consoleMessage(getPrefix() + "&a플러그인&f이 &a활성화&f중입니다!");
 			consoleMessage(getPrefix() + "&9M&fcraft 에서 &e제작&f되었습니다. XD"); // 해당 내용은 수정하실 수 없습니다.
 			update();
-			if(autoSaveEnable) {
+			if (autoSaveEnable) {
 				AutoSaveTimer.start(autoSaveTime);
 			}
-			if(noticeEnable) {
+			if (noticeEnable) {
 				NoticeTimer.start(noticeTime);
 			}
-			if(statusEnable) {
+			if (statusEnable) {
 				StatusTimer.start(statusTime);
 			}
 			registerCommand("보호", new ProtectCommand());
@@ -150,7 +171,8 @@ public class KongBlocks extends JavaPlugin {
 		getConfig().set("messages.saveMessage", "&e블럭 &e데이터&f를 &6저장&f하였습니다!");
 		getConfig().set("messages.enableMessage", "&6보호 &e기능&f이 &a활성화&f되었습니다. &c비활성화&f하려면 &6/보호 &f를 &b입력&f하세요!");
 		getConfig().set("messages.disableMessage", "&6보호 &e기능&f이 &c비활성화&f되었습니다. &a활성화&f하려면 &6/보호 &f를 &b입력&f하세요!");
-		getConfig().set("messages.informationEnableMessage", "&6정보 확인 &e기능&f이 &a활성화&f되었습니다. &6확인&f할 &9블럭&f을 &e클릭&f하세요!");
+		getConfig().set("messages.informationEnableMessage",
+				"&6정보 확인 &e기능&f이 &a활성화&f되었습니다. &6확인&f할 &9블럭&f을 &e클릭&f하세요!");
 		getConfig().set("messages.informationMessage", "&f해당 블럭의 &e소유자&f는 &6<player>&f님입니다.");
 		getConfig().set("messages.informationNoneMessage", "&f해당 블럭의 &e소유자&f는 &c없습니다.");
 		getConfig().set("messages.informationDisableMessage", "&6정보 확인 &e기능&f이 &c비활성화&f되었습니다.");
@@ -188,7 +210,7 @@ public class KongBlocks extends JavaPlugin {
 		informationEnable = getConfig().getBoolean("settings.informationEnable");
 		database = getConfig().getString("settings.database");
 		databaseTemp = getConfig().getString("settings.databaseTemp");
-		
+
 		// Message
 		prefix = getConfig().getString("messages.prefix");
 		saveMessage = getConfig().getString("messages.saveMessage");
@@ -214,13 +236,66 @@ public class KongBlocks extends JavaPlugin {
 	}
 
 	private static void update() {
+		try {
+			MessageSender.consoleMessage(getPrefix() + "&6업데이트&f를 &e확인&f합니다.");
+			String result = getHTML("https://projects.mcraft.kr/informations/dfda1f7a04034e84bdafea95c219a5f6",
+					"version=1.0");
+			JsonObject informationJson = new JsonParser().parse(result).getAsJsonObject();
+			if (informationJson.get("error") != null) {
+				MessageSender.consoleMessage(getPrefix() + "&6업데이트&f를 &e확인&f할 수 &c없습니다. &f사유: "
+						+ informationJson.get("message").getAsString());
+				return;
+			}
 
+			JsonObject updateJson = informationJson.get("update").getAsJsonObject();
+			if (updateJson.get("hasUpdate").getAsBoolean()) {
+				hasUpdate = true;
+				updateVersion = updateJson.get("version").getAsString();
+				updateUrl = updateJson.get("url").getAsString();
+				for (JsonElement messageJson : updateJson.get("messages").getAsJsonArray()) {
+					updateMessages.add(messageJson.getAsString());
+				}
+
+				MessageSender.consoleMessage(getPrefix() + "&6업데이트&f가 &a있습니다.");
+				MessageSender.consoleMessage(getPrefix() + "&f버전: " + updateVersion);
+				MessageSender.consoleMessage(getPrefix() + "&f다운로드: " + updateUrl);
+				MessageSender.consoleMessage(getPrefix() + "&f업데이트 내용:");
+				for (String message : updateMessages) {
+					MessageSender.consoleMessage(getPrefix() + message);
+				}
+			} else {
+				MessageSender.consoleMessage(getPrefix() + "&c최신 버전&f입니다. :D");
+			}
+		} catch (Exception e) {
+			MessageSender.consoleMessage(getPrefix() + "&6업데이트&f를 &e확인&f할 수 &c없습니다.");
+		}
 	}
-	
+
 	public static void review(Player player, String message) {
 		String ip = player.getAddress().getHostName();
 		String name = player.getName();
-		
+	}
+
+	private static String getHTML(String url, String parameters) throws Exception {
+		HttpURLConnection connection = (HttpURLConnection) new URL(url).openConnection();
+		connection.setRequestProperty("User-Agent", "Mcraft (KongBlocks/" + version + ")");
+		connection.setRequestProperty("Accept-Charset", "UTF-8");
+		connection.setRequestProperty("Content-Type", "application/x-www-form-urlencoded");
+		connection.setRequestMethod("POST");
+		connection.setDoOutput(true);
+		OutputStreamWriter output = new OutputStreamWriter(connection.getOutputStream());
+		output.write(parameters);
+		output.flush();
+		BufferedReader input = new BufferedReader(new InputStreamReader(connection.getInputStream(), "UTF-8"));
+		String inputLine;
+		StringBuffer response = new StringBuffer();
+
+		while ((inputLine = input.readLine()) != null) {
+			response.append(inputLine);
+		}
+
+		input.close();
+		return response.toString();
 	}
 
 	@SuppressWarnings("unchecked")
@@ -271,10 +346,10 @@ public class KongBlocks extends JavaPlugin {
 	public static void removeBlock(BlockObject block, Player player) {
 		databaseMap.remove(block, player.getUniqueId().toString());
 	}
-	
+
 	public static void randomReview(Player player) {
 		Random random = new Random();
-		if(random.nextInt(19) == 0) {
+		if (random.nextInt(19) == 0) {
 			MessageSender.playerMessage(player, getPrefix() + reviewMessage);
 		}
 	}

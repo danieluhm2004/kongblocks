@@ -63,7 +63,6 @@ public class ProtectCommand implements CommandExecutor {
 								MessageSender.playerMessage(player, KongBlocks.getPrefix() + KongBlocks.saveMessage);
 							}
 						} catch (Exception e) {
-							e.printStackTrace();
 							MessageSender.playerMessage(player, KongBlocks.getPrefix() + "다음 &c오류&f로 인하여 &e파일&f을 &6저장&f할 수 없습니다. " + e.getMessage());
 						}
 					} else {
