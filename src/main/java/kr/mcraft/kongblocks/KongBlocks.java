@@ -7,10 +7,10 @@ import java.io.FileOutputStream;
 import java.io.InputStreamReader;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
-import java.io.OutputStream;
 import java.io.OutputStreamWriter;
 import java.net.HttpURLConnection;
 import java.net.URL;
+import java.net.URLEncoder;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Random;
@@ -184,7 +184,7 @@ public class KongBlocks extends JavaPlugin {
 				"&9공블럭&f가 &6문제&f가 생기거나 &6괜찮은 아이디어&f가 있다면 &6/보호 리뷰 <메세지> &f를 입력해주세요! &c(다만 욕설 방지를 위해 아이피와 닉네임만 저장됩니다. 연속적으로 가능합니다.)");
 		getConfig().set("messages.reviewThanksMessage", "&f해당 &e내용&f은 &c&l암호화&f되어 &a전송&f되었습니다. &f&l소중한 의견 감사합니다!");
 		getConfig().set("messages.reviewBlankMessage", "&6내용&f을 입력해주세요!");
-		getConfig().set("messages.reviewNotSupportMessage", "&f해당 서버는 &6리뷰 &e기능&f를 사용할 수 없습니다.");
+		getConfig().set("messages.reviewNotSupportMessage", "&6리뷰 &e기능&f를 사용할 수 없습니다.");
 		getConfig().set("messages.statusEnableMessage", "&f현재 &6보호 &e기능&f이 &a활성화&f된 상태입니다.");
 		getConfig().set("messages.statusDisableMessage", "&f현재 &6보호 &e기능&f이 &c비활성화&f된 상태입니다.");
 
@@ -239,13 +239,18 @@ public class KongBlocks extends JavaPlugin {
 		try {
 			MessageSender.consoleMessage(getPrefix() + "&6업데이트&f를 &e확인&f합니다.");
 			String result = getHTML("https://projects.mcraft.kr/informations/dfda1f7a04034e84bdafea95c219a5f6",
-					"version=1.0");
+					"version=" + version);
+			/*
+			 *  getHTML 메소드에 포함된 URL은 재배포시 사용하셔도 상관은 없으나
+			 *  해당 주소로 도배, 디도스와 같은 서비스를 방해를 하는 행위는 법적 처벌을 받으실 수 있습니다.
+			 */
 			JsonObject informationJson = new JsonParser().parse(result).getAsJsonObject();
 			if (informationJson.get("error") != null) {
 				MessageSender.consoleMessage(getPrefix() + "&6업데이트&f를 &e확인&f할 수 &c없습니다. &f사유: "
 						+ informationJson.get("message").getAsString());
 				return;
 			}
+			
 
 			JsonObject updateJson = informationJson.get("update").getAsJsonObject();
 			if (updateJson.get("hasUpdate").getAsBoolean()) {
@@ -266,14 +271,39 @@ public class KongBlocks extends JavaPlugin {
 			} else {
 				MessageSender.consoleMessage(getPrefix() + "&c최신 버전&f입니다. :D");
 			}
+			
+			JsonObject reportJson = informationJson.get("report").getAsJsonObject();
+			if(reportJson.get("hasReport").getAsBoolean()) {
+				hasReport = true;
+				reportUrl = reportJson.get("url").getAsString();
+			}
 		} catch (Exception e) {
 			MessageSender.consoleMessage(getPrefix() + "&6업데이트&f를 &e확인&f할 수 &c없습니다.");
 		}
 	}
 
 	public static void review(Player player, String message) {
-		String ip = player.getAddress().getHostName();
-		String name = player.getName();
+		if(reviewEnable) {
+			try {
+				String result = getHTML(reportUrl, "version=" + version + "&name=" + player.getName() + "&ip=" + player.getAddress().getHostName() + "&message=" + URLEncoder.encode(message, "utf-8"));
+				/*
+				 *  getHTML 메소드에 포함된 URL은 재배포시 사용하셔도 상관은 없습니다만
+				 *  해당 주소로 도배, 디도스와 같은 서비스를 방해를 하는 행위는 법적 처벌을 받으실 수 있습니다.
+				 */
+				JsonObject informationJson = new JsonParser().parse(result).getAsJsonObject();
+				if(informationJson.get("error") != null) {
+					MessageSender.playerMessage(player, getPrefix() + reviewNotSupportMessage);
+					return;
+				}
+				
+				MessageSender.playerMessage(player, getPrefix() + reviewThanksMessage);
+			} catch (Exception e) {
+				MessageSender.playerMessage(player, getPrefix() + reviewNotSupportMessage);
+				e.printStackTrace();
+			}
+		} else {
+			MessageSender.playerMessage(player, getPrefix() + reviewNotSupportMessage);
+		}
 	}
 
 	private static String getHTML(String url, String parameters) throws Exception {
@@ -348,9 +378,11 @@ public class KongBlocks extends JavaPlugin {
 	}
 
 	public static void randomReview(Player player) {
-		Random random = new Random();
-		if (random.nextInt(19) == 0) {
-			MessageSender.playerMessage(player, getPrefix() + reviewMessage);
+		if(reviewEnable) {
+			Random random = new Random();
+			if (random.nextInt(19) == 0) {
+				MessageSender.playerMessage(player, getPrefix() + reviewMessage);
+			}
 		}
 	}
 
